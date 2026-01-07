@@ -1,37 +1,36 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { tasks, type Task, type InsertTask } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getTasks(): Promise<Task[]>;
+  createTask(task: InsertTask): Promise<Task>;
+  deleteTask(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private tasks: Map<number, Task>;
+  private currentId: number;
 
   constructor() {
-    this.users = new Map();
+    this.tasks = new Map();
+    this.currentId = 1;
+    this.tasks.set(this.currentId, { id: this.currentId++, description: "Buy groceries", completed: false });
+    this.tasks.set(this.currentId, { id: this.currentId++, description: "Walk the dog", completed: false });
+    this.tasks.set(this.currentId, { id: this.currentId++, description: "Finish the project", completed: false });
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getTasks(): Promise<Task[]> {
+    return Array.from(this.tasks.values());
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const id = this.currentId++;
+    const task: Task = { ...insertTask, id, completed: false };
+    this.tasks.set(id, task);
+    return task;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async deleteTask(id: number): Promise<void> {
+    this.tasks.delete(id);
   }
 }
 
